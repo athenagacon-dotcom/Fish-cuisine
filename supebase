@@ -1,0 +1,104 @@
+// Configuration Supabase : renseignez ces deux valeurs après avoir créé votre projet.
+const SUPABASE_URL = "sb_publishable_XAQJS9u4H8SafPz_mjHJtw_jxcELKfD";
+const SUPABASE_ANON_KEY = "sb_secret_m0sMJ_P6TzICHJB7ZaYBRA_iXYwljOf";
+let supabase = null, ingredients = [], recipes = [], selected = new Set(), adminTab = "recipes";
+const $ = s => document.querySelector(s);
+const money = n => new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(Number(n)||0);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.remove("hidden");setTimeout(()=>el.classList.add("hidden"),2600)}
+function demoData(){
+ ingredients=[
+  {id:"i1",name:"Tomate",category:"Légumes",emoji:"🍅"},{id:"i2",name:"Courgette",category:"Légumes",emoji:"🥒"},{id:"i3",name:"Oignon",category:"Légumes",emoji:"🧅"},{id:"i4",name:"Carotte",category:"Légumes",emoji:"🥕"},{id:"i5",name:"Pâtes",category:"Féculents",emoji:"🍝"},{id:"i6",name:"Riz",category:"Féculents",emoji:"🍚"},{id:"i7",name:"Œuf",category:"Produits frais",emoji:"🥚"},{id:"i8",name:"Fromage râpé",category:"Produits frais",emoji:"🧀"},{id:"i9",name:"Pois chiches",category:"Légumineuses",emoji:"🫘"},{id:"i10",name:"Lait de coco",category:"Épicerie",emoji:"🥥"}];
+ recipes=[
+  {id:"r1",title:"Pâtes aux légumes du soleil",category:"Plat",description:"Un plat généreux et coloré, parfait pour utiliser les légumes du panier.",time:25,servings:2,cost:2.8,calories:480,protein:16,emoji:"🍝",steps:"1. Faites cuire les pâtes.\n2. Faites revenir l'oignon, la courgette et les tomates dans une poêle.\n3. Mélangez avec les pâtes, assaisonnez et servez.",items:[["i1",2,"tomates"],["i2",1,"courgette"],["i3",1,"oignon"],["i5",180,"g"]]},
+  {id:"r2",title:"Riz crémeux coco & carotte",category:"Plat",description:"Une recette douce et parfumée aux inspirations végétales.",time:30,servings:2,cost:3.4,calories:520,protein:11,emoji:"🍛",steps:"1. Émincez l'oignon et coupez les carottes.\n2. Faites revenir les légumes.\n3. Ajoutez le riz, le lait de coco et de l'eau. Laissez cuire jusqu'à absorption.",items:[["i3",1,"oignon"],["i4",2,"carottes"],["i6",160,"g"],["i10",200,"ml"]]},
+  {id:"r3",title:"Galettes de pois chiches",category:"Végétarien",description:"Des galettes dorées, simples à préparer et riches en protéines végétales.",time:20,servings:2,cost:2.2,calories:390,protein:18,emoji:"🥙",steps:"1. Écrasez les pois chiches.\n2. Ajoutez l'œuf et l'oignon finement haché.\n3. Formez des galettes et faites dorer à la poêle.",items:[["i9",240,"g"],["i7",1,"œuf"],["i3",0.5,"oignon"]]},
+  {id:"r4",title:"Gratin courgette & tomate",category:"Plat",description:"Un gratin familial avec une croûte de fromage fondante.",time:40,servings:2,cost:3.1,calories:350,protein:19,emoji:"🥘",steps:"1. Coupez les courgettes et les tomates en rondelles.\n2. Disposez dans un plat, assaisonnez.\n3. Ajoutez le fromage et enfournez 25 minutes à 190 °C.",items:[["i1",2,"tomates"],["i2",2,"courgettes"],["i8",70,"g"]]}
+ ];
+}
+async function connect(){
+ if(!SUPABASE_URL.startsWith("https://")||SUPABASE_ANON_KEY.includes("COLLER_")){demoData();return false}
+ try{const {createClient}=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");supabase=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);await loadData();return true}
+ catch(e){console.error(e);demoData();toast("Connexion à la base impossible : affichage en mode démonstration.");return false}
+}
+async function loadData(){
+ const [ir,rr]=await Promise.all([supabase.from("ingredients").select("*").order("name"),supabase.from("recipes").select("*, recipe_ingredients(ingredient_id, quantity, unit, ingredients(name, emoji))").order("title")]);
+ if(ir.error||rr.error)throw(ir.error||rr.error);
+ ingredients=ir.data;recipes=rr.data.map(r=>({...r,items:(r.recipe_ingredients||[]).map(x=>[x.ingredient_id,x.quantity,x.unit,x.ingredients?.name])}));
+}
+function render(){
+ const cats=[...new Set(ingredients.map(i=>i.category).filter(Boolean))];
+ $("#category-filter").innerHTML='<option value="">Toutes les catégories</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join("");
+ $("#recipe-category").innerHTML='<option value="">Toutes les catégories</option>'+[...new Set(recipes.map(r=>r.category))].map(c=>`<option>${esc(c)}</option>`).join("");
+ renderIngredients();renderRecipes();
+}
+function renderIngredients(){
+ const q=$("#ingredient-search").value.toLowerCase(),cat=$("#category-filter").value;
+ $("#ingredient-chips").innerHTML=ingredients.filter(i=>i.name.toLowerCase().includes(q)&&(!cat||i.category===cat)).map(i=>`<button class="chip ${selected.has(i.id)?"active":""}" data-ing="${esc(i.id)}">${esc(i.emoji||"🌿")} ${esc(i.name)}</button>`).join("");
+ $("#selected-count").textContent=`${selected.size} ingrédient${selected.size>1?"s":""} sélectionné${selected.size>1?"s":""}`;
+}
+function renderRecipes(){
+ const cat=$("#recipe-category").value,mode=$("#match-mode").value;
+ const list=recipes.filter(r=>{
+  if(cat&&r.category!==cat)return false;
+  if(!selected.size)return true;
+  const ids=r.items.map(x=>String(x[0]));
+  return mode==="all"?[...selected].every(id=>ids.includes(id)):ids.some(id=>selected.has(id));
+ });
+ $("#recipe-grid").innerHTML=list.map(r=>`<article class="recipe-card" data-recipe="${esc(r.id)}"><div class="recipe-visual">${r.image_url?`<img src="${esc(r.image_url)}" alt="">`:esc(r.emoji||"🍲")}<span class="recipe-tag">${esc(r.category||"Recette")}</span></div><div class="recipe-body"><h3>${esc(r.title)}</h3><p>${esc(r.description||"Une recette maison à découvrir.")}</p><div class="recipe-meta"><span>◷ ${r.time||0} min</span><span>♧ ${r.servings||2} pers.</span><span>${money(r.cost)}</span></div></div></article>`).join("");
+ $("#empty-recipes").classList.toggle("hidden",list.length>0);
+}
+function showRecipe(id){
+ const r=recipes.find(x=>String(x.id)===String(id));if(!r)return;
+ const factor=Number($("#people-count")?.value)||r.servings||2;
+ const lines=r.items.map(x=>{const ing=ingredients.find(i=>String(i.id)===String(x[0]));return `<div class="ingredient-line"><span>${esc(ing?.emoji||"🌿")} ${esc(ing?.name||x[3]||"Ingrédient")}</span><b>${fmtQty((Number(x[1])||0)*factor/(r.servings||2))} ${esc(x[2]||"")}</b></div>`}).join("");
+ $("#recipe-detail").innerHTML=`<div class="detail-hero">${r.image_url?`<img src="${esc(r.image_url)}" style="width:100%;height:100%;object-fit:cover">`:esc(r.emoji||"🍲")}</div><p class="eyebrow">${esc(r.category||"RECETTE")}</p><h2 class="detail-title">${esc(r.title)}</h2><p>${esc(r.description||"")}</p><div class="detail-meta"><span>◷ ${r.time||0} min</span><span>Coût estimé : ${money(r.cost)}</span></div><label class="field">Nombre de personnes<input id="people-count" type="number" min="1" max="30" value="${r.servings||2}"></label><div class="detail-columns"><div><h3>Ingrédients</h3><div id="detail-ingredients">${lines}</div><p><b>Coût estimé :</b> ${money((Number(r.cost)||0)*factor/(r.servings||2))}</p><p><b>Nutrition / personne :</b><br>${Math.round((r.calories||0)*factor/(r.servings||2))} kcal · ${Math.round((r.protein||0)*factor/(r.servings||2))} g protéines</p><button id="shopping-add" class="btn">Ajouter à ma liste de courses</button></div><div><h3>Préparation</h3><p style="white-space:pre-line;line-height:1.8;font-size:13px">${esc(r.steps||"Préparation à compléter.")}</p></div></div>`;
+ $("#people-count").addEventListener("input",()=>showRecipe(id));
+ $("#shopping-add").addEventListener("click",()=>{const items=r.items.map(x=>{const ing=ingredients.find(i=>String(i.id)===String(x[0]));return `${fmtQty(Number(x[1])*factor/(r.servings||2))} ${x[2]||""} ${ing?.name||x[3]||""}`});const txt=`Liste de courses – ${r.title}\n${items.join("\n")}`;navigator.clipboard?.writeText(txt).then(()=>toast("Liste de courses copiée !")).catch(()=>toast(items.join(" · ")))});
+ $("#recipe-modal").classList.remove("hidden");
+}
+function fmtQty(n){return Number.isInteger(n)?n:(Math.round(n*100)/100).toString().replace(".",",")}
+function openAdmin(){ $("#admin-modal").classList.remove("hidden");renderAdmin()}
+function renderAdmin(){
+ const configured=!!supabase;
+ $("#admin-content").innerHTML=`<p class="eyebrow">VOTRE ESPACE PERSONNEL</p><h2>Administration</h2>${!configured?'<div class="notice">Mode aperçu : les exemples sont visibles, mais l’enregistrement des modifications nécessite de configurer Supabase (étapes dans le guide).</div>':""}
+ <div id="auth-area"></div><div class="admin-tabs"><button data-tab="recipes" class="${adminTab==="recipes"?"active":""}">Recettes</button><button data-tab="ingredients" class="${adminTab==="ingredients"?"active":""}">Ingrédients</button></div><div id="admin-panel"></div>`;
+ if(configured)renderAuth();renderAdminPanel();
+}
+async function renderAuth(){
+ const {data:{session}}=await supabase.auth.getSession();
+ $("#auth-area").innerHTML=session?`<div class="notice">Connecté : ${esc(session.user.email)} <button id="logout" class="text-btn">Se déconnecter</button></div>`:`<div class="form-grid"><div class="field"><label>Adresse e-mail</label><input id="auth-email" type="email" placeholder="vous@exemple.fr"></div><div class="field"><label>Mot de passe</label><input id="auth-password" type="password" placeholder="8 caractères minimum"></div></div><div class="admin-actions"><button id="login" class="btn">Se connecter</button><button id="signup" class="btn secondary">Créer mon compte</button></div><div class="notice">Créez votre compte la première fois. L'accès est protégé par Supabase Auth.</div>`;
+ $("#login")?.addEventListener("click",()=>authAction("login"));$("#signup")?.addEventListener("click",()=>authAction("signup"));
+ $("#logout")?.addEventListener("click",async()=>{await supabase.auth.signOut();renderAdmin()});
+}
+async function authAction(action){
+ const email=$("#auth-email").value,password=$("#auth-password").value;if(!email||password.length<8){toast("Saisissez un e-mail et un mot de passe (8 caractères minimum).");return}
+ const res=action==="signup"?await supabase.auth.signUp({email,password}):await supabase.auth.signInWithPassword({email,password});
+ if(res.error){toast(res.error.message);return}toast(action==="signup"?"Compte créé. Vérifiez votre e-mail si demandé.":"Connexion réussie.");await loadData();render();renderAdmin();
+}
+function renderAdminPanel(){
+ const panel=$("#admin-panel");if(!panel)return;
+ const logged=!!supabase;
+ if(adminTab==="ingredients"){
+ panel.innerHTML=`<h3>Ajouter un ingrédient</h3><div class="form-grid"><div class="field"><label>Nom</label><input id="new-ing-name" placeholder="Ex. Aubergine"></div><div class="field"><label>Catégorie</label><input id="new-ing-cat" placeholder="Légumes"></div><div class="field"><label>Emoji</label><input id="new-ing-emoji" placeholder="🍆"></div></div><button class="btn" id="save-ing">Enregistrer l'ingrédient</button><div class="admin-list">${ingredients.map(i=>`<div class="admin-item"><span>${esc(i.emoji||"🌿")} ${esc(i.name)} <small>· ${esc(i.category||"")}</small></span><button data-delete-ing="${esc(i.id)}">Supprimer</button></div>`).join("")}</div>`;
+ $("#save-ing").onclick=async()=>{const name=$("#new-ing-name").value.trim();if(!name)return toast("Indiquez un nom.");if(!supabase)return toast("Configurez Supabase pour enregistrer.");const {data:{user}}=await supabase.auth.getUser();if(!user)return toast("Connectez-vous d'abord.");const {error}=await supabase.from("ingredients").insert({name,category:$("#new-ing-cat").value,emoji:$("#new-ing-emoji").value,user_id:user.id});if(error)return toast(error.message);await loadData();render();renderAdminPanel();toast("Ingrédient ajouté.")};
+ panel.querySelectorAll("[data-delete-ing]").forEach(b=>b.onclick=async()=>{if(!confirm("Supprimer cet ingrédient ?"))return;const {error}=await supabase.from("ingredients").delete().eq("id",b.dataset.deleteIng);if(error)return toast(error.message);await loadData();render();renderAdminPanel()});
+ }else{
+ panel.innerHTML=`<h3>Ajouter une recette</h3><div class="form-grid"><div class="field"><label>Nom de la recette</label><input id="r-title" placeholder="Ex. Soupe de saison"></div><div class="field"><label>Catégorie</label><input id="r-cat" placeholder="Plat, dessert…"></div><div class="field"><label>Temps (minutes)</label><input id="r-time" type="number" value="30"></div><div class="field"><label>Nombre de personnes</label><input id="r-servings" type="number" value="2" min="1"></div><div class="field"><label>Coût total estimé (€)</label><input id="r-cost" type="number" step=".01" value="3"></div><div class="field"><label>Calories par personne</label><input id="r-cal" type="number" value="450"></div><div class="field"><label>Protéines par personne (g)</label><input id="r-protein" type="number" value="15"></div><div class="field"><label>Emoji (ou image à ajouter plus tard)</label><input id="r-emoji" value="🍲"></div><div class="field wide"><label>Description</label><textarea id="r-desc"></textarea></div><div class="field wide"><label>Préparation (une étape par ligne)</label><textarea id="r-steps"></textarea></div><div class="field wide"><label>Ingrédients et quantités</label><div class="notice">Choisissez un ingrédient, saisissez sa quantité et son unité, puis cliquez sur « Ajouter à la recette ».</div><div class="form-grid"><select id="r-ing"><option value="">Choisir un ingrédient</option>${ingredients.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join("")}</select><input id="r-qty" type="number" step=".1" placeholder="Quantité"><input id="r-unit" placeholder="g, ml, pièce…"></div><button id="add-ri" class="btn secondary">Ajouter à la recette</button><div id="recipe-items" class="admin-list"></div></div></div><button id="save-recipe" class="btn">Enregistrer la recette</button><div class="admin-list">${recipes.map(r=>`<div class="admin-item"><span>${esc(r.emoji||"🍲")} ${esc(r.title)}</span><button data-delete-recipe="${esc(r.id)}">Supprimer</button></div>`).join("")}</div>`;
+ let chosen=[];
+ const draw=()=>$("#recipe-items").innerHTML=chosen.map(x=>`<div class="admin-item"><span>${esc(ingredients.find(i=>String(i.id)===String(x.id))?.name||"")} — ${x.quantity} ${esc(x.unit)}</span><button data-rm="${x.id}">Retirer</button></div>`).join("");
+ $("#add-ri").onclick=()=>{const id=$("#r-ing").value,quantity=Number($("#r-qty").value),unit=$("#r-unit").value;if(!id||!quantity)return toast("Choisissez un ingrédient et une quantité.");chosen.push({id,quantity,unit});draw()};
+ $("#recipe-items").addEventListener("click",e=>{if(e.target.dataset.rm){chosen=chosen.filter(x=>String(x.id)!==e.target.dataset.rm);draw()}});
+ $("#save-recipe").onclick=async()=>{const title=$("#r-title").value.trim();if(!title||!chosen.length)return toast("Ajoutez un titre et au moins un ingrédient.");if(!supabase)return toast("Configurez Supabase pour enregistrer.");const {data:{user}}=await supabase.auth.getUser();if(!user)return toast("Connectez-vous d'abord.");const payload={title,category:$("#r-cat").value,description:$("#r-desc").value,steps:$("#r-steps").value,time:Number($("#r-time").value),servings:Number($("#r-servings").value),cost:Number($("#r-cost").value),calories:Number($("#r-cal").value),protein:Number($("#r-protein").value),emoji:$("#r-emoji").value,user_id:user.id};const {data,error}=await supabase.from("recipes").insert(payload).select().single();if(error)return toast(error.message);const rel=chosen.map(x=>({recipe_id:data.id,ingredient_id:x.id,quantity:x.quantity,unit:x.unit,user_id:user.id}));const result=await supabase.from("recipe_ingredients").insert(rel);if(result.error)return toast(result.error.message);await loadData();render();renderAdminPanel();toast("Recette enregistrée.")};
+ panel.querySelectorAll("[data-delete-recipe]").forEach(b=>b.onclick=async()=>{if(!confirm("Supprimer cette recette ?"))return;const {error}=await supabase.from("recipes").delete().eq("id",b.dataset.deleteRecipe);if(error)return toast(error.message);await loadData();render();renderAdminPanel()});
+ }
+}
+$("#ingredient-search").addEventListener("input",renderIngredients);$("#category-filter").addEventListener("change",renderIngredients);
+$("#recipe-category").addEventListener("change",renderRecipes);$("#match-mode").addEventListener("change",renderRecipes);
+$("#ingredient-chips").addEventListener("click",e=>{const b=e.target.closest("[data-ing]");if(!b)return;const id=b.dataset.ing;selected.has(id)?selected.delete(id):selected.add(id);renderIngredients();renderRecipes()});
+$("#clear-selection").onclick=()=>{selected.clear();renderIngredients();renderRecipes()};
+$("#recipe-grid").addEventListener("click",e=>{const card=e.target.closest("[data-recipe]");if(card)showRecipe(card.dataset.recipe)});
+$("#open-admin").onclick=openAdmin;
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$("#"+b.dataset.close).classList.add("hidden"));
+document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.add("hidden")}));
+await connect();render();
