@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mon espace personnel de recettes et d'ingrédients">
+    <title>Mon carnet de recettes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <div class="logo">
+            <span>✳</span> Mon carnet de recettes
+        </div>
+
+        <nav>
+            <a href="#accueil">Accueil</a>
+            <a href="#ingredients">Ingrédients</a>
+            <a href="#recettes">Recettes</a>
+            <a href="#apropos">À propos</a>
+        </nav>
+
+        <button id="adminButton" class="admin-button">
+            Administration
+        </button>
+    </header>
+
+    <main>
+        <section id="accueil" class="hero">
+            <div class="hero-content">
+                <p class="eyebrow">CUISINER AUTREMENT</p>
+                <h1>Le plaisir de cuisiner commence ici.</h1>
+                <p>
+                    Retrouvez vos ingrédients, découvrez des recettes
+                    et organisez votre cuisine simplement.
+                </p>
+
+                <div class="hero-actions">
+                    <a href="#recettes" class="primary-button">
+                        Découvrir les recettes
+                    </a>
+                    <a href="#ingredients" class="secondary-button">
+                        Mes ingrédients
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="ingredients" class="section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">VOTRE GARDE-MANGER</p>
+                    <h2>Les ingrédients</h2>
+                    <p>Retrouvez les produits disponibles dans votre cuisine.</p>
+                </div>
+            </div>
+
+            <div id="ingredientsList" class="cards-grid"></div>
+        </section>
+
+        <section id="recettes" class="section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">INSPIRATION CULINAIRE</p>
+                    <h2>Mes recettes</h2>
+                    <p>Des idées pour transformer vos ingrédients en délicieux plats.</p>
+                </div>
+            </div>
+
+            <div id="recipesList" class="cards-grid"></div>
+        </section>
+
+        <section id="apropos" class="about">
+            <p class="eyebrow">NOTRE UNIVERS</p>
+            <h2>Une cuisine plus simple, plus organisée.</h2>
+            <p>
+                Un espace personnel pour conserver vos ingrédients,
+                organiser vos recettes et profiter pleinement de votre cuisine.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Mon carnet de recettes · 2026</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
