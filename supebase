@@ -1,6 +1,6 @@
 // Configuration Supabase : renseignez ces deux valeurs après avoir créé votre projet.
-const SUPABASE_URL = "sb_publishable_XAQJS9u4H8SafPz_mjHJtw_jxcELKfD";
-const SUPABASE_ANON_KEY = "sb_secret_m0sMJ_P6TzICHJB7ZaYBRA_iXYwljOf";
+const SUPABASE_URL = "https://lyurfjunusxfpugsmlbc.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_XAQJS9u4H8SafPz_mjHJtw_jxcELKfD";
 let supabase = null, ingredients = [], recipes = [], selected = new Set(), adminTab = "recipes";
 const $ = s => document.querySelector(s);
 const money = n => new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(Number(n)||0);
