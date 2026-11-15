@@ -1,0 +1,301 @@
+
+/* =================================
+   1. VARIABLES ET COULEURS
+================================= */
+
+:root {
+    --cream: #f8f6ef;
+    --beige: #eae4d8;
+    --green: #526b52;
+    --green-dark: #354b38;
+    --sage: #dce4d7;
+    --text: #30382e;
+    --muted: #777c70;
+    --white: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background: var(--cream);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+/* =================================
+   2. NAVIGATION
+================================= */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 7%;
+    background: var(--cream);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--beige);
+}
+
+.logo {
+    font-size: 21px;
+    font-weight: bold;
+}
+
+.logo span {
+    color: var(--green);
+}
+
+nav {
+    display: flex;
+    gap: 30px;
+}
+
+nav a {
+    text-decoration: none;
+    color: var(--text);
+    font-size: 15px;
+}
+
+nav a:hover {
+    color: var(--green);
+}
+
+.admin-button {
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+}
+
+/* =================================
+   3. PAGE D'ACCUEIL
+================================= */
+
+.hero {
+    min-height: 540px;
+    display: flex;
+    align-items: center;
+    padding: 80px 10%;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(248,246,239,0.97),
+            rgba(248,246,239,0.55)
+        ),
+        url("https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1600")
+        center/cover;
+}
+
+.hero-content {
+    max-width: 620px;
+}
+
+.eyebrow {
+    color: var(--green);
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.hero h1 {
+    font-size: clamp(42px, 6vw, 68px);
+    line-height: 1.1;
+    margin-bottom: 25px;
+    font-weight: normal;
+}
+
+.hero-content > p:not(.eyebrow) {
+    color: var(--muted);
+    font-size: 17px;
+    max-width: 480px;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.primary-button,
+.secondary-button {
+    display: inline-block;
+    padding: 14px 23px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.primary-button {
+    background: var(--green);
+    color: white;
+}
+
+.secondary-button {
+    border: 1px solid var(--green);
+    color: var(--green);
+}
+
+/* =================================
+   4. SECTIONS
+================================= */
+
+.section {
+    padding: 90px 8%;
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.section-heading h2,
+.about h2 {
+    font-size: 42px;
+    font-weight: normal;
+    margin-bottom: 10px;
+}
+
+.section-heading p:not(.eyebrow) {
+    color: var(--muted);
+    font-size: 15px;
+}
+
+/* =================================
+   5. CARTES
+================================= */
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+}
+
+.card {
+    background: var(--white);
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--beige);
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+}
+
+.card-content {
+    padding: 22px;
+}
+
+.card h3 {
+    font-size: 22px;
+    margin-bottom: 8px;
+    font-weight: normal;
+}
+
+.card p {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* =================================
+   6. PRESENTATION
+================================= */
+
+.about {
+    text-align: center;
+    padding: 100px 10%;
+    background: var(--sage);
+}
+
+.about h2 {
+    max-width: 650px;
+    margin: 0 auto 20px;
+}
+
+.about > p:last-child {
+    max-width: 600px;
+    margin: auto;
+    color: var(--muted);
+}
+
+/* =================================
+   7. PIED DE PAGE
+================================= */
+
+footer {
+    padding: 30px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* =================================
+   8. TELEPHONES ET TABLETTES
+================================= */
+
+@media (max-width: 850px) {
+    .header {
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    nav {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hero {
+        padding: 70px 7%;
+    }
+}
+
+@media (max-width: 550px) {
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section {
+        padding: 60px 6%;
+    }
+
+    .section-heading h2,
+    .about h2 {
+        font-size: 32px;
+    }
+
+    .admin-button {
+        padding: 10px 14px;
+    }
+}
